@@ -13,6 +13,19 @@ Customer tools should call only the local API exposed by this stack. They should
 
 The repository does not build images locally. It consumes prebuilt images published by AXIANS in the private registry.
 
+## Product purpose
+
+The purpose of this product is to register automation executions and execution times.
+
+The local API exists to:
+
+- receive execution records from customer automation tools
+- persist execution history locally
+- expose local execution history for troubleshooting and observability
+- forward execution data to the AXIANS central platform
+
+The automation registration step is only supporting metadata. It exists so each execution can be associated with a local `automation_id`.
+
 ## What this stack provides
 
 - a local API that receives automation execution logs over HTTP
@@ -132,12 +145,35 @@ These volumes should be preserved across upgrades and host restarts.
 
 The expected client-side flow is:
 
-1. register the automation locally in the client API
+1. register the approved automation locally in the client API
 2. keep the returned `automation_id`
 3. send execution logs to `POST /automations/{automationId}/executions`
 4. let the API persist locally and forward centrally
 
 If the central endpoint is temporarily unavailable, the local API stores the log locally and retries automatically through Redis/BullMQ.
+
+## Important contract detail
+
+When a customer tool sends an execution to the local API, the `automation_id` is not sent inside the JSON body.
+
+It is sent in the URL path:
+
+- `POST /automations/{automationId}/executions`
+
+The JSON body sent by the customer tool contains only execution data such as:
+
+- `execution_uuid`
+- `trigger_type`
+- `status`
+- `started_at`
+- `finished_at`
+- `duration_ms`
+- `host`
+- `runtime`
+- `error_code`
+- `error_message`
+
+The local API then injects the local `automation_id` and the configured `CLIENT_ID` when forwarding the execution to AXIANS.
 
 ## API quick reference
 
@@ -155,9 +191,12 @@ Main endpoints:
 - `POST /automations/{automationId}/executions`
 - `GET /automations/{automationId}/executions`
 
-### Create a local automation
+### Register an approved automation locally
 
-Use this once for each approved automation.
+Use this once for each automation approved by AXIANS.
+
+This does not create a new automation in the AXIANS central catalog.
+It creates the local record required by the customer-side API so execution logs can be stored and sent using the returned `automation_id`.
 
 Request:
 
@@ -171,6 +210,14 @@ Request:
 ```
 
 ### Send an execution
+
+The customer integration must call:
+
+- `POST /automations/{automationId}/executions`
+
+where `{automationId}` is the local identifier returned by the registration step above.
+
+Do not include `automation_id`, `CLIENT_ID`, or `AUTOMATION_TOKEN` in the JSON body sent by the automation tool.
 
 Request:
 
@@ -215,7 +262,7 @@ Start with [examples/README.md](/Users/rmarquesa/Documents/automation-logs/deplo
 
 ### curl
 
-Create automation:
+Register approved automation locally:
 
 ```bash
 bash examples/curl/create-automation.sh
@@ -231,10 +278,10 @@ bash examples/curl/send-execution.sh
 
 The Bash wrapper is useful for cron jobs, shell scripts, and lightweight Linux automation hosts.
 
-Create an automation:
+Register an approved automation locally:
 
 ```bash
-bash examples/bash/automation-logs.sh create-automation "Backup Firewall" "bash" "1.0.0" "30"
+bash examples/bash/automation-logs.sh register-automation "Backup Firewall" "bash" "1.0.0" "30"
 ```
 
 Send an execution:
@@ -309,7 +356,7 @@ The PowerShell example is useful for Windows-based automation hosts:
 
 For each approved automation:
 
-1. create the automation once in the local API
+1. register the automation once in the local API
 2. save the returned `automation_id` in the automation platform or script configuration
 3. send one execution record at the end of each run
 4. for failures, send `status=error` plus `error_code` and `error_message`
@@ -324,7 +371,7 @@ This gives the customer:
 
 1. AXIANS provides `CLIENT_ID` and `AUTOMATION_TOKEN`
 2. customer deploys this stack
-3. customer creates the approved automation in the local API
+3. customer registers the approved automation in the local API
 4. customer stores the resulting `automation_id`
 5. customer updates scripts, playbooks, jobs, or workflows to post executions to the local API
 

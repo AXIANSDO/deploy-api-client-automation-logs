@@ -8,18 +8,27 @@ All examples call the local Automation Logs API exposed by this stack:
 - no local authentication header required
 - `CLIENT_ID` and `AUTOMATION_TOKEN` stay in the Docker Compose `.env` file
 
+This product is focused on execution logging and execution time tracking. The registration step exists only to create the local `automation_id` required by the execution route.
+
 ## Recommended usage sequence
 
-1. Create the automation once in the local API.
+1. Register the approved automation once in the local API.
 2. Save the returned `automation_id` in the tool configuration.
 3. Send one execution event after each run.
 4. Reuse the same `execution_uuid` only when retrying the same execution.
 
+The execution request uses:
+
+- route: `POST /automations/{automationId}/executions`
+- body: execution fields only
+
+Do not send `automation_id`, `CLIENT_ID`, or `AUTOMATION_TOKEN` inside the JSON body of the local execution request.
+
 ## Included examples
 
-- [curl/create-automation.sh](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/curl/create-automation.sh): one-off registration script
+- [curl/create-automation.sh](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/curl/create-automation.sh): one-off local registration script for an approved automation
 - [curl/send-execution.sh](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/curl/send-execution.sh): one-off execution sender
-- [bash/automation-logs.sh](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/bash/automation-logs.sh): reusable Bash wrapper with subcommands
+- [bash/automation-logs.sh](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/bash/automation-logs.sh): reusable Bash wrapper with local registration and execution subcommands
 - [python/automation_logs_client.py](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/python/automation_logs_client.py): Python wrapper using the standard library
 - [javascript/automation-logs-client.mjs](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/javascript/automation-logs-client.mjs): Node.js wrapper using native `fetch`
 - [ansible/playbook.yml](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/ansible/playbook.yml): idempotent Ansible example
@@ -35,3 +44,5 @@ All examples call the local Automation Logs API exposed by this stack:
 - `POST /automations/{automationId}/executions` returns `202` when the log is queued locally for retry
 
 Treat both `201` and `202` as successful execution submissions.
+
+The `POST /automations` step is a local registration step. It exists because the customer-side API stores automations locally and requires `automation_id` in the execution route.

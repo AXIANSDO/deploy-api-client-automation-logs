@@ -6,7 +6,7 @@ BASE_URL="${BASE_URL:-http://localhost:3001}"
 usage() {
   cat <<'EOF'
 Usage:
-  bash examples/bash/automation-logs.sh create-automation <name> [type] [version] [manual_minutes]
+  bash examples/bash/automation-logs.sh register-automation <name> [type] [version] [manual_minutes]
   bash examples/bash/automation-logs.sh send-execution <automation_id> [status] [duration_ms]
 
 Environment variables:
@@ -17,7 +17,7 @@ Environment variables:
 EOF
 }
 
-create_automation() {
+register_automation() {
   local name="${1:?name is required}"
   local type="${2:-bash}"
   local version="${3:-1.0.0}"
@@ -61,9 +61,13 @@ main() {
   local command="${1:-}"
 
   case "${command}" in
+    register-automation)
+      shift
+      register_automation "$@"
+      ;;
     create-automation)
       shift
-      create_automation "$@"
+      register_automation "$@"
       ;;
     send-execution)
       shift
