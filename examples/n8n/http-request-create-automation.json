@@ -1,0 +1,107 @@
+{
+  "name": "Create Automation (Local API)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "name",
+              "name": "name",
+              "value": "Backup Firewall",
+              "type": "string"
+            },
+            {
+              "id": "type",
+              "name": "type",
+              "value": "n8n",
+              "type": "string"
+            },
+            {
+              "id": "version",
+              "name": "version",
+              "value": "1.0.0",
+              "type": "string"
+            },
+            {
+              "id": "manualExecutionEffortMinutes",
+              "name": "manualExecutionEffortMinutes",
+              "value": "30",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-payload",
+      "name": "Set Automation Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3001/automations",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": $json.name,\n  \"type\": $json.type,\n  \"version\": $json.version,\n  \"manualExecutionEffortMinutes\": Number($json.manualExecutionEffortMinutes)\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "create-automation",
+      "name": "Create Automation (Local API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Automation Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Automation Payload": {
+      "main": [
+        [
+          {
+            "node": "Create Automation (Local API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {}
+}

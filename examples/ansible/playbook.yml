@@ -1,0 +1,77 @@
+---
+- name: Send automation logs to local API
+  hosts: localhost
+  gather_facts: false
+  vars:
+    base_url: "http://localhost:3001"
+    automation_name: "Backup Firewall"
+    automation_type: "ansible"
+    automation_version: "1.0.0"
+    execution_uuid: "a7b1f570-85fb-4b4d-bb63-19ce0d75dfe4"
+  tasks:
+    - name: Look up existing automation
+      ansible.builtin.uri:
+        url: "{{ base_url }}/automations?search={{ automation_name | urlencode }}&type={{ automation_type | urlencode }}"
+        method: GET
+      register: listed_automations
+
+    - name: Create local automation if it does not exist
+      ansible.builtin.uri:
+        url: "{{ base_url }}/automations"
+        method: POST
+        status_code: 201
+        body_format: json
+        body:
+          name: "{{ automation_name }}"
+          type: "{{ automation_type }}"
+          version: "{{ automation_version }}"
+          manualExecutionEffortMinutes: 30
+      register: created_automation
+      when: >
+        (
+          listed_automations.json.data | default([])
+          | selectattr('name', 'equalto', automation_name)
+          | selectattr('type', 'equalto', automation_type)
+          | selectattr('version', 'equalto', automation_version)
+          | list
+          | length
+        ) == 0
+
+    - name: Set automation id
+      ansible.builtin.set_fact:
+        automation_id: >-
+          {{
+            (
+              listed_automations.json.data | default([])
+              | selectattr('name', 'equalto', automation_name)
+              | selectattr('type', 'equalto', automation_type)
+              | selectattr('version', 'equalto', automation_version)
+              | map(attribute='id')
+              | list
+              | first
+            )
+            | default(created_automation.json.id, true)
+          }}
+
+    - name: Send execution to local API
+      ansible.builtin.uri:
+        url: "{{ base_url }}/automations/{{ automation_id }}/executions"
+        method: POST
+        status_code: [201, 202]
+        body_format: json
+        body:
+          execution_uuid: "{{ execution_uuid }}"
+          trigger_type: "schedule"
+          status: "success"
+          started_at: "2026-03-31T19:00:00.000Z"
+          finished_at: "2026-03-31T19:01:23.000Z"
+          duration_ms: 83000
+          host: "runner-01"
+          runtime: "ansible"
+          error_code: null
+          error_message: null
+      register: execution_response
+
+    - name: Show execution response
+      ansible.builtin.debug:
+        var: execution_response.json

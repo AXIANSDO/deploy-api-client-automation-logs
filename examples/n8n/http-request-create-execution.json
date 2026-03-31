@@ -1,0 +1,137 @@
+{
+  "name": "Create Execution (Local API)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "automation_id",
+              "name": "automation_id",
+              "value": "replace-with-local-automation-id",
+              "type": "string"
+            },
+            {
+              "id": "execution_uuid",
+              "name": "execution_uuid",
+              "value": "a7b1f570-85fb-4b4d-bb63-19ce0d75dfe4",
+              "type": "string"
+            },
+            {
+              "id": "trigger_type",
+              "name": "trigger_type",
+              "value": "schedule",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "started_at",
+              "name": "started_at",
+              "value": "2026-03-31T19:00:00.000Z",
+              "type": "string"
+            },
+            {
+              "id": "finished_at",
+              "name": "finished_at",
+              "value": "2026-03-31T19:01:23.000Z",
+              "type": "string"
+            },
+            {
+              "id": "duration_ms",
+              "name": "duration_ms",
+              "value": "83000",
+              "type": "string"
+            },
+            {
+              "id": "host",
+              "name": "host",
+              "value": "runner-01",
+              "type": "string"
+            },
+            {
+              "id": "runtime",
+              "name": "runtime",
+              "value": "n8n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-payload",
+      "name": "Set Execution Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'http://localhost:3001/automations/' + $json.automation_id + '/executions' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"execution_uuid\": $json.execution_uuid,\n  \"trigger_type\": $json.trigger_type,\n  \"status\": $json.status,\n  \"started_at\": $json.started_at,\n  \"finished_at\": $json.finished_at,\n  \"duration_ms\": Number($json.duration_ms),\n  \"host\": $json.host,\n  \"runtime\": $json.runtime,\n  \"error_code\": null,\n  \"error_message\": null\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "create-execution",
+      "name": "Create Execution (Local API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Execution Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Execution Payload": {
+      "main": [
+        [
+          {
+            "node": "Create Execution (Local API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {}
+}
