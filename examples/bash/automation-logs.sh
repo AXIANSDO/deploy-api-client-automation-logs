@@ -6,7 +6,7 @@ BASE_URL="${BASE_URL:-http://localhost:3001}"
 usage() {
   cat <<'EOF'
 Usage:
-  bash examples/bash/automation-logs.sh register-automation <name> [type] [version] [manual_minutes]
+  bash examples/bash/automation-logs.sh register-automation <automation_id> <name> [type] [version] [manual_minutes]
   bash examples/bash/automation-logs.sh send-execution <automation_id> [status] [duration_ms]
 
 Environment variables:
@@ -18,14 +18,16 @@ EOF
 }
 
 register_automation() {
-  local name="${1:?name is required}"
-  local type="${2:-bash}"
-  local version="${3:-1.0.0}"
-  local manual_minutes="${4:-15}"
+  local automation_id="${1:?automation_id is required}"
+  local name="${2:?name is required}"
+  local type="${3:-bash}"
+  local version="${4:-1.0.0}"
+  local manual_minutes="${5:-15}"
 
   curl -sS -X POST "${BASE_URL}/automations" \
     -H 'Content-Type: application/json' \
     -d "{
+      \"id\": \"${automation_id}\",
       \"name\": \"${name}\",
       \"type\": \"${type}\",
       \"version\": \"${version}\",

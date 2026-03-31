@@ -29,23 +29,24 @@ def _request(method: str, path: str, payload: dict | None = None) -> dict:
         raise RuntimeError(f"HTTP {error.code}: {body}") from error
 
 
-def list_automations(search: str | None = None, automation_type: str | None = None) -> list[dict]:
-    query = {}
-    if search:
-      query["search"] = search
-    if automation_type:
-      query["type"] = automation_type
-
-    path = "/automations"
-    if query:
-        path = f"/automations?{urllib.parse.urlencode(query)}"
-
-    response = _request("GET", path)
-    return response.get("data", [])
+def get_automation(automation_id: str) -> dict | None:
+    try:
+        return _request("GET", f"/automations/{automation_id}")
+    except RuntimeError as error:
+        if "HTTP 404:" in str(error):
+            return None
+        raise
 
 
-def create_automation(name: str, automation_type: str, version: str, manual_minutes: int | None = None) -> dict:
+def create_automation(
+    automation_id: str,
+    name: str,
+    automation_type: str,
+    version: str,
+    manual_minutes: int | None = None,
+) -> dict:
     payload = {
+        "id": automation_id,
         "name": name,
         "type": automation_type,
         "version": version,
@@ -55,16 +56,24 @@ def create_automation(name: str, automation_type: str, version: str, manual_minu
     return _request("POST", "/automations", payload)
 
 
-def ensure_automation(name: str, automation_type: str, version: str, manual_minutes: int | None = None) -> dict:
-    for automation in list_automations(search=name, automation_type=automation_type):
-        if (
-            automation.get("name") == name
-            and automation.get("type") == automation_type
-            and automation.get("version") == version
-        ):
-            return automation
+def ensure_automation(
+    automation_id: str,
+    name: str,
+    automation_type: str,
+    version: str,
+    manual_minutes: int | None = None,
+) -> dict:
+    existing = get_automation(automation_id)
+    if existing:
+        return existing
 
-    return create_automation(name, automation_type, version, manual_minutes)
+    return create_automation(
+        automation_id,
+        name,
+        automation_type,
+        version,
+        manual_minutes,
+    )
 
 
 def send_execution(automation_id: str, execution: dict) -> dict:
@@ -72,7 +81,16 @@ def send_execution(automation_id: str, execution: dict) -> dict:
 
 
 if __name__ == "__main__":
-    automation = ensure_automation("Backup Firewall", "python", "1.0.0", 30)
+    automation_id = os.getenv(
+        "AUTOMATION_ID", "replace-with-approved-automation-id"
+    )
+    automation = ensure_automation(
+        automation_id,
+        "Backup Firewall",
+        "python",
+        "1.0.0",
+        30,
+    )
     print("Using automation:", automation["id"])
 
     result = send_execution(

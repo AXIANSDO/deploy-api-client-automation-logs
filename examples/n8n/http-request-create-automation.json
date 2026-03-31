@@ -17,6 +17,12 @@
         "assignments": {
           "assignments": [
             {
+              "id": "automation_id",
+              "name": "id",
+              "value": "replace-with-approved-automation-id",
+              "type": "string"
+            },
+            {
               "id": "name",
               "name": "name",
               "value": "Backup Firewall",
@@ -59,7 +65,7 @@
         "url": "http://localhost:3001/automations",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"name\": $json.name,\n  \"type\": $json.type,\n  \"version\": $json.version,\n  \"manualExecutionEffortMinutes\": Number($json.manualExecutionEffortMinutes)\n}",
+        "jsonBody": "={\n  \"id\": $json.id,\n  \"name\": $json.name,\n  \"type\": $json.type,\n  \"version\": $json.version,\n  \"manualExecutionEffortMinutes\": Number($json.manualExecutionEffortMinutes)\n}",
         "options": {
           "response": {
             "response": {

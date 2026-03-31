@@ -14,24 +14,20 @@ async function request(method, path, payload) {
   return response.json();
 }
 
-export async function listAutomations({ search, type } = {}) {
-  const query = new URLSearchParams();
-
-  if (search) {
-    query.set('search', search);
+export async function getAutomation(automationId) {
+  try {
+    return await request('GET', `/automations/${automationId}`);
+  } catch (error) {
+    if (String(error.message).startsWith('HTTP 404:')) {
+      return null;
+    }
+    throw error;
   }
-
-  if (type) {
-    query.set('type', type);
-  }
-
-  const suffix = query.toString() ? `?${query.toString()}` : '';
-  const response = await request('GET', `/automations${suffix}`);
-  return response.data || [];
 }
 
-export async function createAutomation({ name, type, version, manualExecutionEffortMinutes }) {
+export async function createAutomation({ id, name, type, version, manualExecutionEffortMinutes }) {
   return request('POST', '/automations', {
+    id,
     name,
     type,
     version,
@@ -39,20 +35,13 @@ export async function createAutomation({ name, type, version, manualExecutionEff
   });
 }
 
-export async function ensureAutomation({ name, type, version, manualExecutionEffortMinutes }) {
-  const existing = await listAutomations({ search: name, type });
-  const match = existing.find(
-    (automation) =>
-      automation.name === name &&
-      automation.type === type &&
-      automation.version === version
-  );
-
-  if (match) {
-    return match;
+export async function ensureAutomation({ id, name, type, version, manualExecutionEffortMinutes }) {
+  const existing = await getAutomation(id);
+  if (existing) {
+    return existing;
   }
 
-  return createAutomation({ name, type, version, manualExecutionEffortMinutes });
+  return createAutomation({ id, name, type, version, manualExecutionEffortMinutes });
 }
 
 export async function sendExecution(automationId, execution) {
@@ -60,6 +49,7 @@ export async function sendExecution(automationId, execution) {
 }
 
 const automation = await ensureAutomation({
+  id: process.env.AUTOMATION_ID || 'replace-with-approved-automation-id',
   name: 'Backup Firewall',
   type: 'javascript',
   version: '1.0.0',

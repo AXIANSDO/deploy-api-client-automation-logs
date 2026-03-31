@@ -52,6 +52,7 @@ The forwarding endpoint is:
 - outbound HTTPS access to `https://api-corp.axiansms.pt`
 - the AXIANS-issued `CLIENT_ID`
 - the AXIANS-issued `AUTOMATION_TOKEN`
+- the AXIANS-issued `automation_id` for each approved automation
 
 ## Files in this repository
 
@@ -145,7 +146,7 @@ These volumes should be preserved across upgrades and host restarts.
 
 The expected client-side flow is:
 
-1. register the approved automation locally in the client API
+1. register the approved automation locally in the client API using the `automation_id` issued by AXIANS
 2. keep the returned `automation_id`
 3. send execution logs to `POST /automations/{automationId}/executions`
 4. let the API persist locally and forward centrally
@@ -198,10 +199,13 @@ Use this once for each automation approved by AXIANS.
 This does not create a new automation in the AXIANS central catalog.
 It creates the local record required by the customer-side API so execution logs can be stored and sent using the returned `automation_id`.
 
+Use the `automation_id` issued by AXIANS in this request so the local identifier and the central identifier remain the same.
+
 Request:
 
 ```json
 {
+  "id": "8c81036f-7db4-4c53-992f-5670fa76f7aa",
   "name": "Backup Firewall",
   "type": "ansible",
   "version": "1.0.0",
@@ -251,7 +255,7 @@ Creating the same automation twice returns `409 AUTOMATION_ALREADY_EXISTS`.
 
 For repeated or idempotent integrations, prefer wrappers that:
 
-- create the automation once and save `automation_id`
+- register the automation once and save `automation_id`
 - or look up the automation first and reuse the existing `automation_id`
 
 ## Integration examples
@@ -281,7 +285,7 @@ The Bash wrapper is useful for cron jobs, shell scripts, and lightweight Linux a
 Register an approved automation locally:
 
 ```bash
-bash examples/bash/automation-logs.sh register-automation "Backup Firewall" "bash" "1.0.0" "30"
+bash examples/bash/automation-logs.sh register-automation "<approved-automation-id>" "Backup Firewall" "bash" "1.0.0" "30"
 ```
 
 Send an execution:
@@ -294,7 +298,7 @@ bash examples/bash/automation-logs.sh send-execution "<automation-id>" "success"
 
 The Python wrapper exposes helpers for:
 
-- `list_automations(...)`
+- `get_automation(...)`
 - `ensure_automation(...)`
 - `send_execution(...)`
 
@@ -310,7 +314,7 @@ The JavaScript wrapper uses native `fetch` in Node.js 20+.
 
 It includes:
 
-- `listAutomations(...)`
+- `getAutomation(...)`
 - `ensureAutomation(...)`
 - `sendExecution(...)`
 
@@ -369,9 +373,9 @@ This gives the customer:
 
 ## Example customer implementation sequence
 
-1. AXIANS provides `CLIENT_ID` and `AUTOMATION_TOKEN`
+1. AXIANS provides `CLIENT_ID`, `AUTOMATION_TOKEN`, and one `automation_id` per approved automation
 2. customer deploys this stack
-3. customer registers the approved automation in the local API
+3. customer registers the approved automation in the local API using the AXIANS-issued `automation_id`
 4. customer stores the resulting `automation_id`
 5. customer updates scripts, playbooks, jobs, or workflows to post executions to the local API
 

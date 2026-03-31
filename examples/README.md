@@ -17,6 +17,8 @@ This product is focused on execution logging and execution time tracking. The re
 3. Send one execution event after each run.
 4. Reuse the same `execution_uuid` only when retrying the same execution.
 
+Use the `automation_id` issued by AXIANS when registering the automation locally.
+
 The execution request uses:
 
 - route: `POST /automations/{automationId}/executions`
