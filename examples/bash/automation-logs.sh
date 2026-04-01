@@ -43,9 +43,10 @@ send_execution() {
   local started_at="${STARTED_AT:-$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")}"
   local finished_at="${FINISHED_AT:-$started_at}"
 
-  curl -sS -X POST "${BASE_URL}/automations/${automation_id}/executions" \
+  curl -sS -X POST "${BASE_URL}/executions" \
     -H 'Content-Type: application/json' \
     -d "{
+      \"automation_id\": \"${automation_id}\",
       \"execution_uuid\": \"${execution_uuid}\",
       \"trigger_type\": \"manual\",
       \"status\": \"${status}\",

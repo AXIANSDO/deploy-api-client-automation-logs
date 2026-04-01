@@ -1,40 +1,76 @@
 # Deploy API Client Automation Logs
 
-This repository is the customer-facing deployment package for the AXIANS Automation Logs client stack.
+[English version](README.en.md)
 
-It is meant to be shared with customers so they can:
+Este repositório é o pacote de deployment orientado ao cliente do stack **AXIANS Automation Logs**.
 
-- deploy the local Automation Logs API with Docker Compose
-- configure the connection to the AXIANS central platform
-- register approved automations locally
-- push execution logs from their automation tools into the local API
+O objetivo dele é permitir que cada cliente:
 
-Customer tools should call only the local API exposed by this stack. They should not send logs directly to the AXIANS central endpoint.
+- faça o deploy do `api-client-automation-logs` via Docker Compose
+- configure a ligação com a plataforma central da Axians
+- registe localmente as automações já aprovadas pela Axians
+- envie tempos e estados de execução das suas automações para a API local
 
-The repository does not build images locally. It consumes prebuilt images published by AXIANS in the private registry.
+As ferramentas do cliente devem chamar **apenas a API local** exposta por este stack. Elas não devem enviar logs diretamente para a API central da Axians.
 
-## Product purpose
+Este repositório não faz `build` de imagens localmente. Ele consome imagens já publicadas pela Axians no registry privado.
 
-The purpose of this product is to register automation executions and execution times.
+## Propósito do produto
 
-The local API exists to:
+O propósito deste produto é **registar execuções e tempos de execução de automações**.
 
-- receive execution records from customer automation tools
-- persist execution history locally
-- expose local execution history for troubleshooting and observability
-- forward execution data to the AXIANS central platform
+A API local existe para:
 
-The automation registration step is only supporting metadata. It exists so each execution can be associated with a local `automation_id`.
+- receber registos de execução enviados pelas ferramentas de automação do cliente
+- persistir o histórico localmente
+- disponibilizar histórico e observabilidade local para troubleshooting
+- reenviar esses dados para a plataforma central da Axians
 
-## What this stack provides
+O passo de registo da automação existe apenas para persistir localmente a automação aprovada, para que cada execução possa referenciar o `automation_id` correto.
 
-- a local API that receives automation execution logs over HTTP
-- a local PostgreSQL database for persistence
-- a local Redis instance for retry queueing
-- a preconfigured Grafana instance for local visibility
-- automatic forwarding of execution logs to the AXIANS corporate gateway
+## Porque é que o cliente precisa de registar uma automação localmente?
 
-The forwarding endpoint is:
+Esta é a parte que mais costuma gerar confusão, por isso a regra fica explícita:
+
+- a Axians cria e aprova a automação centralmente
+- o cliente **não** cria uma nova automação na plataforma central da Axians
+- o cliente faz um **registo local único** na API local
+- esse registo local usa o **mesmo `automation_id` emitido pela Axians**
+
+Na prática, existem duas APIs com responsabilidades diferentes:
+
+| API | Função |
+| --- | --- |
+| API central da Axians (`api-axians`) | Guarda a automação aprovada centralmente, emite o token e recebe logs de execução de todos os clientes |
+| API local do cliente (`api-client`) | Guarda uma cópia local da automação aprovada e recebe logs de execução das ferramentas locais |
+
+O passo de registo local existe porque a API do lado do cliente mantém metadados da automação localmente e associa cada execução a um registo de automação existente.
+
+Isto significa que:
+
+- o cliente regista a automação aprovada localmente uma vez
+- depois disso, o cliente só envia logs de execução
+- o mesmo `automation_id` é reutilizado ponta a ponta
+
+Este passo local **não**:
+
+- cria uma nova automação na plataforma central da Axians
+- substitui o fluxo de aprovação gerido pela Axians
+- obriga o cliente a inventar um novo identificador
+
+Ele apenas informa a API local de que:
+
+> "Esta automação aprovada pela Axians existe neste ambiente de cliente e os próximos logs usando este `automation_id` pertencem a ela."
+
+## O que este stack entrega
+
+- uma API local que recebe logs de execução via HTTP
+- uma base de dados PostgreSQL local para persistência
+- uma instância Redis local para fila e retentativas
+- uma instância Grafana pré-configurada para visibilidade local
+- reencaminhamento automático de logs de execução para o gateway corporativo da Axians
+
+O endpoint central de forwarding é:
 
 - `https://api-corp.axiansms.pt/v1/automation-logs`
 
@@ -45,125 +81,138 @@ The forwarding endpoint is:
 - PostgreSQL: `postgres:16-alpine`
 - Redis: `redis:7-alpine`
 
-## Customer prerequisites
+## Pré-requisitos do cliente
 
-- a Linux host with Docker Engine and Docker Compose plugin
-- access to `registry.agc.local`
-- outbound HTTPS access to `https://api-corp.axiansms.pt`
-- the AXIANS-issued `CLIENT_ID`
-- the AXIANS-issued `AUTOMATION_TOKEN`
-- the AXIANS-issued `automation_id` for each approved automation
+- host Linux com Docker Engine e plugin Docker Compose
+- acesso a `registry.agc.local`
+- saída HTTPS para `https://api-corp.axiansms.pt`
+- `CLIENT_ID` emitido pela Axians
+- `AUTOMATION_TOKEN` emitido pela Axians
+- `automation_id` emitido pela Axians para cada automação aprovada
 
-## Files in this repository
+## Ficheiros neste repositório
 
-- [docker-compose.yml](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/docker-compose.yml): runtime stack for the customer environment
-- [.env.example](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/.env.example): template for customer-specific secrets and configuration
-- [examples/README.md](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/README.md): example index and usage notes
-- [examples/curl/create-automation.sh](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/curl/create-automation.sh): register a local automation with `curl`
-- [examples/curl/send-execution.sh](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/curl/send-execution.sh): send an execution log with `curl`
-- [examples/bash/automation-logs.sh](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/bash/automation-logs.sh): reusable Bash wrapper
-- [examples/python/automation_logs_client.py](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/python/automation_logs_client.py): Python wrapper
-- [examples/javascript/automation-logs-client.mjs](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/javascript/automation-logs-client.mjs): JavaScript wrapper
-- [examples/ansible/playbook.yml](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/ansible/playbook.yml): Ansible example
-- [examples/powershell/send-execution.ps1](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/powershell/send-execution.ps1): PowerShell example
-- [examples/n8n/http-request-create-automation.json](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/n8n/http-request-create-automation.json): importable n8n workflow to create a local automation
-- [examples/n8n/http-request-create-execution.json](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/n8n/http-request-create-execution.json): importable n8n workflow to send a local execution
+- [docker-compose.yml](docker-compose.yml): stack de runtime para o ambiente do cliente
+- [.env.example](.env.example): template com secrets e configuração específica do cliente
+- [examples/README.md](examples/README.md): índice de exemplos e notas de utilização
+- [examples/curl/create-automation.sh](examples/curl/create-automation.sh): registo local de automação com `curl`
+- [examples/curl/send-execution.sh](examples/curl/send-execution.sh): envio de execução com `curl`
+- [examples/bash/automation-logs.sh](examples/bash/automation-logs.sh): wrapper reutilizável em Bash
+- [examples/python/automation_logs_client.py](examples/python/automation_logs_client.py): wrapper em Python
+- [examples/javascript/automation-logs-client.mjs](examples/javascript/automation-logs-client.mjs): wrapper em JavaScript
+- [examples/ansible/playbook.yml](examples/ansible/playbook.yml): exemplo em Ansible
+- [examples/powershell/send-execution.ps1](examples/powershell/send-execution.ps1): exemplo em PowerShell
+- [examples/n8n/http-request-create-automation.json](examples/n8n/http-request-create-automation.json): workflow n8n importável para registo local da automação
+- [examples/n8n/http-request-create-execution.json](examples/n8n/http-request-create-execution.json): workflow n8n importável para envio de execução
 
-## Sensitive configuration
+## Configuração sensível
 
-Copy `.env.example` to `.env` and replace the placeholder values before the first deployment.
+Copie `.env.example` para `.env` e substitua os placeholders antes do primeiro deploy.
 
-The following values are sensitive or customer-specific:
+Os seguintes valores são sensíveis ou específicos do cliente:
 
 - `POSTGRES_PASSWORD`
 - `GF_SECURITY_ADMIN_PASSWORD`
 - `CLIENT_ID`
 - `AUTOMATION_TOKEN`
 
-Do not commit `.env`.
+Não faça commit do ficheiro `.env`.
 
-## How local tools authenticate
+## Como funciona a autenticação das ferramentas locais
 
-Customer automation tools do not need to send `CLIENT_ID` or `AUTOMATION_TOKEN` when calling the local API.
+As ferramentas de automação do cliente **não precisam** de enviar `CLIENT_ID` nem `AUTOMATION_TOKEN` quando chamam a API local.
 
-Those values are configured once in `.env` and injected by the local API when it forwards execution logs to the AXIANS central platform.
+Esses valores são configurados uma vez em `.env` e injetados pela API local quando ela reencaminha os logs de execução para a plataforma central da Axians.
 
-## First deployment
+## Primeiro deploy
 
-1. Log in to the private registry:
+1. Autentique-se no registry privado:
 
 ```bash
 docker login registry.agc.local
 ```
 
-2. Create the runtime environment file:
+2. Crie o ficheiro de ambiente:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Edit `.env` with the final values.
+3. Edite `.env` com os valores finais.
 
-4. Pull the images:
+4. Faça pull das imagens:
 
 ```bash
 docker compose pull
 ```
 
-5. Start the stack:
+5. Inicie o stack:
 
 ```bash
 docker compose up -d
 ```
 
-6. Validate the API:
+6. Valide a API:
 
 ```bash
 curl http://localhost:3001/healthz
 curl http://localhost:3001/readyz
 ```
 
-## Services and ports
+## Serviços e portas
 
 - API: `http://<host>:3001`
 - Grafana: `http://<host>:3000`
 - PostgreSQL: `tcp/<host>:5432`
 - Redis: `tcp/<host>:6379`
 
-If PostgreSQL and Redis do not need to be reachable externally, remove or restrict the published ports according to the customer's network policy.
+Se PostgreSQL e Redis não precisarem de estar acessíveis externamente, remova ou restrinja as portas publicadas de acordo com a política de rede do cliente.
 
-## Persistent data
+## Dados persistentes
 
-The stack stores persistent data in Docker volumes:
+O stack guarda dados persistentes em volumes Docker:
 
 - `postgres_data`
 - `grafana_data`
 - `redis_data`
 
-These volumes should be preserved across upgrades and host restarts.
+Estes volumes devem ser preservados entre upgrades e reinícios do host.
 
-## Operational flow
+## Fluxo operacional
 
-The expected client-side flow is:
+O fluxo esperado do lado do cliente é:
 
-1. register the approved automation locally in the client API using the `automation_id` issued by AXIANS
-2. keep the returned `automation_id`
-3. send execution logs to `POST /automations/{automationId}/executions`
-4. let the API persist locally and forward centrally
+1. registar localmente a automação aprovada na API do cliente, usando o `automation_id` emitido pela Axians
+2. guardar o `automation_id` devolvido
+3. enviar logs de execução para `POST /executions`
+4. deixar que a API persista localmente e reencaminhe centralmente
 
-If the central endpoint is temporarily unavailable, the local API stores the log locally and retries automatically through Redis/BullMQ.
+Se o endpoint central ficar indisponível temporariamente, a API local guarda o registo localmente e reprocessa-o automaticamente através de Redis/BullMQ.
 
-## Important contract detail
+## Diferença entre configuração inicial e uso recorrente
 
-When a customer tool sends an execution to the local API, the `automation_id` is not sent inside the JSON body.
+Existem duas ações separadas:
 
-It is sent in the URL path:
+1. Configuração local única
+   Registar a automação aprovada em `POST /automations`.
 
-- `POST /automations/{automationId}/executions`
+2. Utilização recorrente
+   Enviar um registo de execução após cada corrida da automação para `POST /executions`.
 
-The JSON body sent by the customer tool contains only execution data such as:
+Na maior parte dos casos, as ferramentas do cliente só precisam de executar o passo 1 uma vez e depois usar sempre o passo 2.
+
+## Detalhe importante do contrato
+
+Quando a ferramenta do cliente envia uma execução para a API local, o `automation_id` vai **dentro do corpo JSON**.
+
+A rota é:
+
+- `POST /executions`
+
+O corpo JSON enviado pela ferramenta contém dados como:
 
 - `execution_uuid`
+- `automation_id`
 - `trigger_type`
 - `status`
 - `started_at`
@@ -174,34 +223,39 @@ The JSON body sent by the customer tool contains only execution data such as:
 - `error_code`
 - `error_message`
 
-The local API then injects the local `automation_id` and the configured `CLIENT_ID` when forwarding the execution to AXIANS.
+A API local injeta depois o `CLIENT_ID` configurado e reencaminha a execução para a Axians usando o `automation_id` já presente no payload.
 
-## API quick reference
+## Referência rápida da API
 
 Base URL:
 
 - `http://localhost:3001`
 
-Main endpoints:
+Principais endpoints:
 
 - `GET /healthz`
 - `GET /readyz`
 - `POST /automations`
 - `GET /automations`
 - `GET /automations/{automationId}`
-- `POST /automations/{automationId}/executions`
-- `GET /automations/{automationId}/executions`
+- `POST /executions`
+- `GET /executions`
 
-### Register an approved automation locally
+### Registar localmente uma automação aprovada
 
-Use this once for each automation approved by AXIANS.
+Use este endpoint uma vez por cada automação aprovada pela Axians.
 
-This does not create a new automation in the AXIANS central catalog.
-It creates the local record required by the customer-side API so execution logs can be stored and sent using the returned `automation_id`.
+Isto não cria uma nova automação no catálogo central da Axians.
+Isto cria o registo local necessário para que a API do lado do cliente consiga guardar e enviar logs de execução usando o `automation_id` devolvido.
 
-Use the `automation_id` issued by AXIANS in this request so the local identifier and the central identifier remain the same.
+Use nesta chamada o `automation_id` emitido pela Axians, para que o identificador local e o identificador central se mantenham iguais.
 
-Request:
+Pense nisto desta forma:
+
+- aprovação central na Axians: já concluída
+- registo local no ambiente do cliente: obrigatório uma vez antes do primeiro log de execução
+
+Pedido:
 
 ```json
 {
@@ -213,20 +267,19 @@ Request:
 }
 ```
 
-### Send an execution
+### Enviar uma execução
 
-The customer integration must call:
+A integração do cliente deve chamar:
 
-- `POST /automations/{automationId}/executions`
+- `POST /executions`
 
-where `{automationId}` is the local identifier returned by the registration step above.
+Não inclua `CLIENT_ID` nem `AUTOMATION_TOKEN` no corpo JSON enviado pela ferramenta de automação.
 
-Do not include `automation_id`, `CLIENT_ID`, or `AUTOMATION_TOKEN` in the JSON body sent by the automation tool.
-
-Request:
+Pedido:
 
 ```json
 {
+  "automation_id": "8c81036f-7db4-4c53-992f-5670fa76f7aa",
   "execution_uuid": "a7b1f570-85fb-4b4d-bb63-19ce0d75dfe4",
   "trigger_type": "schedule",
   "status": "success",
@@ -240,39 +293,39 @@ Request:
 }
 ```
 
-Important notes:
+Notas importantes:
 
-- `execution_uuid` must be unique per execution
-- use the same `execution_uuid` on retries to preserve idempotency
-- `status` must be `success` or `error`
-- timestamps must be valid ISO-8601 values
-- successful immediate persistence returns `201 Created`
-- accepted-for-retry responses return `202 Accepted`
+- `execution_uuid` deve ser único por execução
+- reutilize o mesmo `execution_uuid` apenas em retentativas da mesma execução
+- `status` deve ser `success` ou `error`
+- timestamps devem ser valores ISO-8601 válidos
+- sucesso com persistência imediata devolve `201 Created`
+- aceite para retentativa devolve `202 Accepted`
 
-### Duplicate automation registration
+### Registo duplicado de automação
 
-Creating the same automation twice returns `409 AUTOMATION_ALREADY_EXISTS`.
+Criar a mesma automação duas vezes devolve `409 AUTOMATION_ALREADY_EXISTS`.
 
-For repeated or idempotent integrations, prefer wrappers that:
+Para integrações repetíveis ou idempotentes, prefira wrappers que:
 
-- register the automation once and save `automation_id`
-- or look up the automation first and reuse the existing `automation_id`
+- registem a automação uma vez e guardem o `automation_id`
+- ou pesquisem primeiro a automação e reutilizem o `automation_id` existente
 
-## Integration examples
+## Exemplos de integração
 
-The repository includes working examples in the [examples](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples) directory.
+Este repositório inclui exemplos funcionais na diretoria [examples](examples).
 
-Start with [examples/README.md](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/README.md) if you want a quick tool-by-tool guide.
+Comece por [examples/README.md](examples/README.md) se quiser uma orientação rápida por ferramenta.
 
 ### curl
 
-Register approved automation locally:
+Registar a automação aprovada localmente:
 
 ```bash
 bash examples/curl/create-automation.sh
 ```
 
-Send execution:
+Enviar execução:
 
 ```bash
 bash examples/curl/send-execution.sh
@@ -280,15 +333,15 @@ bash examples/curl/send-execution.sh
 
 ### Bash
 
-The Bash wrapper is useful for cron jobs, shell scripts, and lightweight Linux automation hosts.
+O wrapper Bash é útil para `cron`, scripts shell e hosts Linux com automações leves.
 
-Register an approved automation locally:
+Registar uma automação aprovada localmente:
 
 ```bash
 bash examples/bash/automation-logs.sh register-automation "<approved-automation-id>" "Backup Firewall" "bash" "1.0.0" "30"
 ```
 
-Send an execution:
+Enviar uma execução:
 
 ```bash
 bash examples/bash/automation-logs.sh send-execution "<automation-id>" "success" "83000"
@@ -296,13 +349,13 @@ bash examples/bash/automation-logs.sh send-execution "<automation-id>" "success"
 
 ### Python
 
-The Python wrapper exposes helpers for:
+O wrapper Python expõe helpers para:
 
 - `get_automation(...)`
 - `ensure_automation(...)`
 - `send_execution(...)`
 
-Run the example:
+Executar o exemplo:
 
 ```bash
 python3 examples/python/automation_logs_client.py
@@ -310,15 +363,15 @@ python3 examples/python/automation_logs_client.py
 
 ### JavaScript
 
-The JavaScript wrapper uses native `fetch` in Node.js 20+.
+O wrapper JavaScript usa `fetch` nativo em Node.js 20+.
 
-It includes:
+Inclui:
 
 - `getAutomation(...)`
 - `ensureAutomation(...)`
 - `sendExecution(...)`
 
-Run the example:
+Executar o exemplo:
 
 ```bash
 node examples/javascript/automation-logs-client.mjs
@@ -326,14 +379,14 @@ node examples/javascript/automation-logs-client.mjs
 
 ### Ansible
 
-The Ansible example uses the `uri` module to:
+O exemplo de Ansible usa o módulo `uri` para:
 
-- look up an existing automation
-- create it only when missing
-- capture `automation_id`
-- submit one execution event
+- procurar uma automação já existente
+- criá-la apenas se estiver em falta
+- capturar o `automation_id`
+- submeter um evento de execução
 
-Run:
+Executar:
 
 ```bash
 ansible-playbook examples/ansible/playbook.yml
@@ -341,101 +394,101 @@ ansible-playbook examples/ansible/playbook.yml
 
 ### n8n
 
-Import the example workflow JSON in:
+Importe os workflows de exemplo em:
 
-- [examples/n8n/http-request-create-automation.json](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/n8n/http-request-create-automation.json)
-- [examples/n8n/http-request-create-execution.json](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples/n8n/http-request-create-execution.json)
+- [examples/n8n/http-request-create-automation.json](examples/n8n/http-request-create-automation.json)
+- [examples/n8n/http-request-create-execution.json](examples/n8n/http-request-create-execution.json)
 
-They create importable `Manual Trigger -> Set -> HTTP Request` flows calling the local API.
+Eles criam fluxos importáveis do tipo `Manual Trigger -> Set -> HTTP Request` chamando a API local.
 
 ### PowerShell
 
-The PowerShell example is useful for Windows-based automation hosts:
+O exemplo em PowerShell é útil para hosts Windows:
 
 ```powershell
 ./examples/powershell/send-execution.ps1
 ```
 
-## Recommended client-side integration pattern
+## Padrão recomendado de integração do lado do cliente
 
-For each approved automation:
+Para cada automação aprovada:
 
-1. register the automation once in the local API
-2. save the returned `automation_id` in the automation platform or script configuration
-3. send one execution record at the end of each run
-4. for failures, send `status=error` plus `error_code` and `error_message`
+1. registar a automação uma vez na API local
+2. guardar o `automation_id` devolvido na configuração da plataforma ou do script
+3. enviar um registo de execução no final de cada corrida
+4. em caso de falha, enviar `status=error` com `error_code` e `error_message`
 
-This gives the customer:
+Isto dá ao cliente:
 
-- local observability in Grafana
-- durable local persistence
-- automatic forwarding to AXIANS
+- observabilidade local no Grafana
+- persistência local durável
+- forwarding automático para a Axians
 
-## Example customer implementation sequence
+## Sequência típica de implementação no cliente
 
-1. AXIANS provides `CLIENT_ID`, `AUTOMATION_TOKEN`, and one `automation_id` per approved automation
-2. customer deploys this stack
-3. customer registers the approved automation in the local API using the AXIANS-issued `automation_id`
-4. customer stores the resulting `automation_id`
-5. customer updates scripts, playbooks, jobs, or workflows to post executions to the local API
+1. a Axians fornece `CLIENT_ID`, `AUTOMATION_TOKEN` e um `automation_id` por automação aprovada
+2. o cliente faz o deploy deste stack
+3. o cliente regista a automação aprovada na API local usando o `automation_id` emitido pela Axians
+4. o cliente guarda o `automation_id` resultante
+5. o cliente actualiza scripts, playbooks, jobs ou workflows para publicar execuções na API local
 
-## Upgrade procedure
+## Procedimento de upgrade
 
-When AXIANS publishes a new release:
+Quando a Axians publicar uma nova release:
 
-1. update image tags in [docker-compose.yml](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/docker-compose.yml)
-2. pull new images:
+1. actualize as tags das imagens em [docker-compose.yml](docker-compose.yml)
+2. faça pull das novas imagens:
 
 ```bash
 docker compose pull
 ```
 
-3. recreate the services:
+3. recrie os serviços:
 
 ```bash
 docker compose up -d
 ```
 
-## Operational notes
+## Notas operacionais
 
-- `AUTOMATION_TOKEN` is sent by the API to the AXIANS KrakenD gateway as `Authorization: Bearer <token>`
-- `CLIENT_ID` is injected into the forwarded payload to identify the customer
-- Grafana provisioning is baked into the published Grafana image
-- the local API is the only endpoint customer tools should call directly
+- `AUTOMATION_TOKEN` é enviado pela API para o gateway KrakenD da Axians como `Authorization: Bearer <token>`
+- `CLIENT_ID` é injectado no payload reenviado para identificar o cliente
+- o provisioning do Grafana já vem embutido na imagem publicada
+- a API local é o único endpoint que as ferramentas do cliente devem chamar diretamente
 
 ## Troubleshooting
 
-### API is up but `/readyz` returns `503`
+### A API responde, mas `/readyz` devolve `503`
 
-The API could not connect to PostgreSQL yet. Check:
+A API ainda não conseguiu ligar-se ao PostgreSQL. Verifique:
 
 - `docker compose ps`
-- PostgreSQL credentials in `.env`
-- container logs:
+- credenciais do PostgreSQL em `.env`
+- logs dos contentores:
 
 ```bash
 docker compose logs api
 docker compose logs postgres
 ```
 
-### Executions are accepted locally but not visible centrally
+### As execuções são aceites localmente mas não aparecem centralmente
 
-Check:
+Verifique:
 
 - `CLIENT_ID`
 - `AUTOMATION_TOKEN`
-- outbound HTTPS access to `api-corp.axiansms.pt`
-- API logs:
+- saída HTTPS para `api-corp.axiansms.pt`
+- logs da API:
 
 ```bash
 docker compose logs api
 ```
 
-### A customer automation tool needs a ready-made wrapper
+### A ferramenta do cliente precisa de um wrapper pronto a usar
 
-Start from the examples in the [examples](/Users/rmarquesa/Documents/automation-logs/deploy-api-client-automation-logs/examples) directory and adapt only:
+Comece pelos exemplos na diretoria [examples](examples) e adapte apenas:
 
 - base URL
-- automation metadata
-- execution payload fields
-- any platform-specific scheduling or orchestration logic
+- metadados da automação
+- campos do payload de execução
+- qualquer lógica específica de scheduling ou orquestração

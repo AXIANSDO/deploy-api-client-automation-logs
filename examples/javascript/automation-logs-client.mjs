@@ -45,7 +45,10 @@ export async function ensureAutomation({ id, name, type, version, manualExecutio
 }
 
 export async function sendExecution(automationId, execution) {
-  return request('POST', `/automations/${automationId}/executions`, execution);
+  return request('POST', '/executions', {
+    automation_id: automationId,
+    ...execution,
+  });
 }
 
 const automation = await ensureAutomation({

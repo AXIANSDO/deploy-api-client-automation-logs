@@ -86,10 +86,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ 'http://localhost:3001/automations/' + $json.automation_id + '/executions' }}",
+        "url": "http://localhost:3001/executions",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"execution_uuid\": $json.execution_uuid,\n  \"trigger_type\": $json.trigger_type,\n  \"status\": $json.status,\n  \"started_at\": $json.started_at,\n  \"finished_at\": $json.finished_at,\n  \"duration_ms\": Number($json.duration_ms),\n  \"host\": $json.host,\n  \"runtime\": $json.runtime,\n  \"error_code\": null,\n  \"error_message\": null\n}",
+        "jsonBody": "={\n  \"automation_id\": $json.automation_id,\n  \"execution_uuid\": $json.execution_uuid,\n  \"trigger_type\": $json.trigger_type,\n  \"status\": $json.status,\n  \"started_at\": $json.started_at,\n  \"finished_at\": $json.finished_at,\n  \"duration_ms\": Number($json.duration_ms),\n  \"host\": $json.host,\n  \"runtime\": $json.runtime,\n  \"error_code\": null,\n  \"error_message\": null\n}",
         "options": {
           "response": {
             "response": {

@@ -7,9 +7,10 @@ EXECUTION_UUID="${EXECUTION_UUID:-$(uuidgen | tr '[:upper:]' '[:lower:]')}"
 STARTED_AT="${STARTED_AT:-2026-03-31T19:00:00.000Z}"
 FINISHED_AT="${FINISHED_AT:-2026-03-31T19:01:23.000Z}"
 
-curl -sS -X POST "${BASE_URL}/automations/${AUTOMATION_ID}/executions" \
+curl -sS -X POST "${BASE_URL}/executions" \
   -H 'Content-Type: application/json' \
   -d "{
+    \"automation_id\": \"${AUTOMATION_ID}\",
     \"execution_uuid\": \"${EXECUTION_UUID}\",
     \"trigger_type\": \"schedule\",
     \"status\": \"success\",

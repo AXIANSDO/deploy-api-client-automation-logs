@@ -3,6 +3,7 @@ $AutomationId = if ($env:AUTOMATION_ID) { $env:AUTOMATION_ID } else { "replace-w
 $ExecutionUuid = if ($env:EXECUTION_UUID) { $env:EXECUTION_UUID } else { "a7b1f570-85fb-4b4d-bb63-19ce0d75dfe4" }
 
 $Body = @{
+  automation_id  = $AutomationId
   execution_uuid = $ExecutionUuid
   trigger_type   = "schedule"
   status         = "success"
@@ -17,6 +18,6 @@ $Body = @{
 
 Invoke-RestMethod `
   -Method Post `
-  -Uri "$BaseUrl/automations/$AutomationId/executions" `
+  -Uri "$BaseUrl/executions" `
   -ContentType "application/json" `
   -Body $Body

@@ -38,11 +38,12 @@
 
     - name: Send execution to local API
       ansible.builtin.uri:
-        url: "{{ base_url }}/automations/{{ registered_automation_id }}/executions"
+        url: "{{ base_url }}/executions"
         method: POST
         status_code: [201, 202]
         body_format: json
         body:
+          automation_id: "{{ registered_automation_id }}"
           execution_uuid: "{{ execution_uuid }}"
           trigger_type: "schedule"
           status: "success"

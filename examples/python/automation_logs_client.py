@@ -77,7 +77,14 @@ def ensure_automation(
 
 
 def send_execution(automation_id: str, execution: dict) -> dict:
-    return _request("POST", f"/automations/{automation_id}/executions", execution)
+    return _request(
+        "POST",
+        "/executions",
+        {
+            "automation_id": automation_id,
+            **execution,
+        },
+    )
 
 
 if __name__ == "__main__":
