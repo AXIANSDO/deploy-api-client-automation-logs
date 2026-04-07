@@ -91,6 +91,10 @@ if __name__ == "__main__":
     automation_id = os.getenv(
         "AUTOMATION_ID", "replace-with-approved-automation-id"
     )
+    if automation_id == "replace-with-approved-automation-id":
+        raise SystemExit(
+            "Set AUTOMATION_ID to the AXIANS-approved automation ID before running this example."
+        )
     automation = ensure_automation(
         automation_id,
         "Backup Firewall",

@@ -6,8 +6,8 @@ BASE_URL="${BASE_URL:-http://localhost:3001}"
 usage() {
   cat <<'EOF'
 Usage:
-  bash examples/bash/automation-logs.sh register-automation <automation_id> <name> [type] [version] [manual_minutes]
-  bash examples/bash/automation-logs.sh send-execution <automation_id> [status] [duration_ms]
+  bash examples/bash/automation-logs.sh register-automation <approved_automation_id> <name> [type] [version] [manual_minutes]
+  bash examples/bash/automation-logs.sh send-execution <approved_automation_id> [status] [duration_ms]
 
 Environment variables:
   BASE_URL        Local API base URL. Default: http://localhost:3001

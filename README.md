@@ -35,7 +35,7 @@ Esta é a parte que mais costuma gerar confusão, por isso a regra fica explíci
 - a Axians cria e aprova a automação centralmente
 - o cliente **não** cria uma nova automação na plataforma central da Axians
 - o cliente faz um **registo local único** na API local
-- esse registo local usa o **mesmo `automation_id` emitido pela Axians**
+- esse registo local usa obrigatoriamente o **mesmo `automation_id` emitido pela Axians**
 
 Na prática, existem duas APIs com responsabilidades diferentes:
 
@@ -195,7 +195,7 @@ Estes volumes devem ser preservados entre upgrades e reinícios do host.
 O fluxo esperado do lado do cliente é:
 
 1. registar localmente a automação aprovada na API do cliente, usando o `automation_id` emitido pela Axians
-2. guardar o `automation_id` devolvido
+2. confirmar que a API local devolveu o mesmo `automation_id` emitido pela Axians
 3. enviar logs de execução para `POST /executions`
 4. deixar que a API persista localmente e reencaminhe centralmente
 
@@ -258,9 +258,9 @@ Principais endpoints:
 Use este endpoint uma vez por cada automação aprovada pela Axians.
 
 Isto não cria uma nova automação no catálogo central da Axians.
-Isto cria o registo local necessário para que a API do lado do cliente consiga guardar e enviar logs de execução usando o `automation_id` devolvido.
+Isto cria o registo local necessário para que a API do lado do cliente consiga guardar e enviar logs de execução usando o mesmo `automation_id` emitido pela Axians.
 
-Use nesta chamada o `automation_id` emitido pela Axians, para que o identificador local e o identificador central se mantenham iguais.
+Use obrigatoriamente nesta chamada o `automation_id` emitido pela Axians, para que o identificador local e o identificador central se mantenham iguais.
 
 Pense nisto desta forma:
 
@@ -320,7 +320,7 @@ Criar a mesma automação duas vezes devolve `409 AUTOMATION_ALREADY_EXISTS`.
 
 Para integrações repetíveis ou idempotentes, prefira wrappers que:
 
-- registem a automação uma vez e guardem o `automation_id`
+- registem a automação uma vez e confirmem que o `automation_id` devolvido é o mesmo que foi enviado
 - ou pesquisem primeiro a automação e reutilizem o `automation_id` existente
 
 ## Exemplos de integração
@@ -426,7 +426,7 @@ O exemplo em PowerShell é útil para hosts Windows:
 Para cada automação aprovada:
 
 1. registar a automação uma vez na API local
-2. guardar o `automation_id` devolvido na configuração da plataforma ou do script
+2. guardar esse mesmo `automation_id` emitido pela Axians na configuração da plataforma ou do script
 3. enviar um registo de execução no final de cada corrida
 4. em caso de falha, enviar `status=error` com `error_code` e `error_message`
 
@@ -441,7 +441,7 @@ Isto dá ao cliente:
 1. a Axians fornece `CLIENT_ID`, `AUTOMATION_TOKEN` e um `automation_id` por automação aprovada
 2. o cliente faz o deploy deste stack
 3. o cliente regista a automação aprovada na API local usando o `automation_id` emitido pela Axians
-4. o cliente guarda o `automation_id` resultante
+4. o cliente guarda esse mesmo `automation_id` na configuração das ferramentas locais
 5. o cliente actualiza scripts, playbooks, jobs ou workflows para publicar execuções na API local
 
 ## Procedimento de upgrade

@@ -29,11 +29,11 @@ Por isso, os exemplos que chamam `POST /automations` mostram o passo de **regist
 ## Sequência recomendada de utilização
 
 1. Registar a automação aprovada uma vez na API local.
-2. Guardar o `automation_id` devolvido na configuração da ferramenta.
+2. Confirmar que o `automation_id` devolvido é o mesmo emitido pela Axians e guardá-lo na configuração da ferramenta.
 3. Enviar um evento de execução após cada run.
 4. Reutilizar o mesmo `execution_uuid` apenas quando estiver a repetir a mesma execução.
 
-Use o `automation_id` emitido pela Axians ao registar a automação localmente.
+Use obrigatoriamente o `automation_id` emitido pela Axians ao registar a automação localmente.
 
 O pedido de execução usa:
 

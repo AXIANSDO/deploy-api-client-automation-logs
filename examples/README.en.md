@@ -29,11 +29,11 @@ So the examples that call `POST /automations` are showing the **local registrati
 ## Recommended usage sequence
 
 1. Register the approved automation once in the local API.
-2. Save the returned `automation_id` in the tool configuration.
+2. Confirm that the returned `automation_id` matches the one issued by AXIANS and save it in the tool configuration.
 3. Send one execution event after each run.
 4. Reuse the same `execution_uuid` only when retrying the same execution.
 
-Use the `automation_id` issued by AXIANS when registering the automation locally.
+Use the `automation_id` issued by AXIANS when registering the automation locally. It is required.
 
 The execution request uses:
 

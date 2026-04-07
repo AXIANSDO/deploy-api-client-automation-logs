@@ -35,7 +35,7 @@ This is the part that usually creates confusion, so the rule is explicit:
 - AXIANS creates and approves the automation centrally
 - the customer does **not** create a new automation in the AXIANS platform
 - the customer performs a **one-time local registration** in the local API
-- that local registration uses the **same `automation_id` issued by AXIANS**
+- that local registration must use the **same `automation_id` issued by AXIANS**
 
 In practice, there are two different APIs with two different responsibilities:
 
@@ -195,7 +195,7 @@ These volumes should be preserved across upgrades and host restarts.
 The expected client-side flow is:
 
 1. register the approved automation locally in the client API using the `automation_id` issued by AXIANS
-2. keep the returned `automation_id`
+2. confirm that the local API returned the same `automation_id` issued by AXIANS
 3. send execution logs to `POST /executions`
 4. let the API persist locally and forward centrally
 
@@ -258,9 +258,9 @@ Main endpoints:
 Use this once for each automation approved by AXIANS.
 
 This does not create a new automation in the AXIANS central catalog.
-It creates the local record required by the customer-side API so execution logs can be stored and sent using the returned `automation_id`.
+It creates the local record required by the customer-side API so execution logs can be stored and sent using the same `automation_id` issued by AXIANS.
 
-Use the `automation_id` issued by AXIANS in this request so the local identifier and the central identifier remain the same.
+Use the `automation_id` issued by AXIANS in this request. It is required so the local identifier and the central identifier remain the same.
 
 Think of this as:
 
@@ -320,7 +320,7 @@ Creating the same automation twice returns `409 AUTOMATION_ALREADY_EXISTS`.
 
 For repeated or idempotent integrations, prefer wrappers that:
 
-- register the automation once and save `automation_id`
+- register the automation once and confirm the returned `automation_id` matches the one sent by AXIANS
 - or look up the automation first and reuse the existing `automation_id`
 
 ## Integration examples
@@ -426,7 +426,7 @@ The PowerShell example is useful for Windows-based automation hosts:
 For each approved automation:
 
 1. register the automation once in the local API
-2. save the returned `automation_id` in the automation platform or script configuration
+2. save that same AXIANS-issued `automation_id` in the automation platform or script configuration
 3. send one execution record at the end of each run
 4. for failures, send `status=error` plus `error_code` and `error_message`
 
@@ -441,7 +441,7 @@ This gives the customer:
 1. AXIANS provides `CLIENT_ID`, `AUTOMATION_TOKEN`, and one `automation_id` per approved automation
 2. customer deploys this stack
 3. customer registers the approved automation in the local API using the AXIANS-issued `automation_id`
-4. customer stores the resulting `automation_id`
+4. customer stores that same `automation_id` in local tool configuration
 5. customer updates scripts, playbooks, jobs, or workflows to post executions to the local API
 
 ## Upgrade procedure

@@ -51,8 +51,17 @@ export async function sendExecution(automationId, execution) {
   });
 }
 
+const approvedAutomationId =
+  process.env.AUTOMATION_ID || 'replace-with-approved-automation-id';
+
+if (approvedAutomationId === 'replace-with-approved-automation-id') {
+  throw new Error(
+    'Set AUTOMATION_ID to the AXIANS-approved automation ID before running this example.'
+  );
+}
+
 const automation = await ensureAutomation({
-  id: process.env.AUTOMATION_ID || 'replace-with-approved-automation-id',
+  id: approvedAutomationId,
   name: 'Backup Firewall',
   type: 'javascript',
   version: '1.0.0',
