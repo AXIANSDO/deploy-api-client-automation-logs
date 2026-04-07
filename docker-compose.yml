@@ -7,7 +7,8 @@ services:
       - PORT=3001
       - POSTGRES_URI=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379
-      - EXECUTION_FORWARD_URL=https://api-corp.axiansms.pt/v1/automation-logs
+      - EXECUTION_FORWARD_URL=${EXECUTION_FORWARD_URL}
+      - EXECUTION_FORWARD_INSECURE_TLS=${EXECUTION_FORWARD_INSECURE_TLS:-false}
       - AUTOMATION_TOKEN=${AUTOMATION_TOKEN}
       - CLIENT_ID=${CLIENT_ID}
     depends_on:

@@ -70,9 +70,13 @@ It simply tells the local API:
 - a preconfigured Grafana instance for local visibility
 - automatic forwarding of execution logs to the AXIANS corporate gateway
 
-The forwarding endpoint is:
+The forwarding endpoint is configured through:
 
-- `https://api-corp.axiansms.pt/v1/automation-logs`
+- `EXECUTION_FORWARD_URL`
+
+Current internal environment example:
+
+- `https://api-corp.agc.local/v1/automation-logs`
 
 ## Stack
 
@@ -85,7 +89,7 @@ The forwarding endpoint is:
 
 - a Linux host with Docker Engine and Docker Compose plugin
 - access to `registry.agc.local`
-- outbound HTTPS access to `https://api-corp.axiansms.pt`
+- outbound HTTPS access to the host defined in `EXECUTION_FORWARD_URL`
 - the AXIANS-issued `CLIENT_ID`
 - the AXIANS-issued `AUTOMATION_TOKEN`
 - the AXIANS-issued `automation_id` for each approved automation
@@ -111,6 +115,8 @@ Copy `.env.example` to `.env` and replace the placeholder values before the firs
 
 The following values are sensitive or customer-specific:
 
+- `EXECUTION_FORWARD_URL`
+- `EXECUTION_FORWARD_INSECURE_TLS`
 - `POSTGRES_PASSWORD`
 - `GF_SECURITY_ADMIN_PASSWORD`
 - `CLIENT_ID`
@@ -123,6 +129,12 @@ Do not commit `.env`.
 Customer automation tools do not need to send `CLIENT_ID` or `AUTOMATION_TOKEN` when calling the local API.
 
 Those values are configured once in `.env` and injected by the local API when it forwards execution logs to the AXIANS central platform.
+
+If the HTTPS gateway is temporarily using a self-signed certificate, the ingress fake certificate, or any other untrusted chain, you may use:
+
+- `EXECUTION_FORWARD_INSECURE_TLS=true`
+
+This disables TLS validation for HTTPS forwarding and should only be treated as a temporary workaround.
 
 ## First deployment
 
@@ -477,7 +489,7 @@ Check:
 
 - `CLIENT_ID`
 - `AUTOMATION_TOKEN`
-- outbound HTTPS access to `api-corp.axiansms.pt`
+- outbound HTTPS access to the host defined in `EXECUTION_FORWARD_URL`
 - API logs:
 
 ```bash

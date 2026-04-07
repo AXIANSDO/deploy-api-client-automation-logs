@@ -70,9 +70,13 @@ Ele apenas informa a API local de que:
 - uma instância Grafana pré-configurada para visibilidade local
 - reencaminhamento automático de logs de execução para o gateway corporativo da Axians
 
-O endpoint central de forwarding é:
+O endpoint central de forwarding é configurado em:
 
-- `https://api-corp.axiansms.pt/v1/automation-logs`
+- `EXECUTION_FORWARD_URL`
+
+Exemplo atual do ambiente interno:
+
+- `https://api-corp.agc.local/v1/automation-logs`
 
 ## Stack
 
@@ -85,7 +89,7 @@ O endpoint central de forwarding é:
 
 - host Linux com Docker Engine e plugin Docker Compose
 - acesso a `registry.agc.local`
-- saída HTTPS para `https://api-corp.axiansms.pt`
+- saída HTTPS para o host definido em `EXECUTION_FORWARD_URL`
 - `CLIENT_ID` emitido pela Axians
 - `AUTOMATION_TOKEN` emitido pela Axians
 - `automation_id` emitido pela Axians para cada automação aprovada
@@ -111,6 +115,8 @@ Copie `.env.example` para `.env` e substitua os placeholders antes do primeiro d
 
 Os seguintes valores são sensíveis ou específicos do cliente:
 
+- `EXECUTION_FORWARD_URL`
+- `EXECUTION_FORWARD_INSECURE_TLS`
 - `POSTGRES_PASSWORD`
 - `GF_SECURITY_ADMIN_PASSWORD`
 - `CLIENT_ID`
@@ -123,6 +129,12 @@ Não faça commit do ficheiro `.env`.
 As ferramentas de automação do cliente **não precisam** de enviar `CLIENT_ID` nem `AUTOMATION_TOKEN` quando chamam a API local.
 
 Esses valores são configurados uma vez em `.env` e injetados pela API local quando ela reencaminha os logs de execução para a plataforma central da Axians.
+
+Se o gateway HTTPS estiver temporariamente com certificado self-signed, certificado fake do ingress ou outra cadeia não confiável, pode ser usado:
+
+- `EXECUTION_FORWARD_INSECURE_TLS=true`
+
+Esse modo desativa a validação TLS no forwarding HTTPS e deve ser tratado apenas como workaround temporário.
 
 ## Primeiro deploy
 
@@ -477,7 +489,7 @@ Verifique:
 
 - `CLIENT_ID`
 - `AUTOMATION_TOKEN`
-- saída HTTPS para `api-corp.axiansms.pt`
+- saída HTTPS para o host definido em `EXECUTION_FORWARD_URL`
 - logs da API:
 
 ```bash
